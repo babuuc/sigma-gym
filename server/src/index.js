@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const equipmentRoutes = require('./routes/equipment');
 const reservationsRoutes = require('./routes/reservations');
+const ticketsRoutes = require('./routes/tickets');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,6 +42,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/equipment', equipmentRoutes);
 app.use('/api/reservations', reservationsRoutes);
+app.use('/api/tickets', ticketsRoutes);
 
 // 404 handler
 app.use((req, res) => {
