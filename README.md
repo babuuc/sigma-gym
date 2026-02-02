@@ -126,6 +126,32 @@ System automatycznie:
 - Wysyla komende lock do sprzetu
 - Powiadamia przez WS i SSE
 
+## HTTPS (opcjonalnie)
+
+### Generowanie certyfikatow
+
+```bash
+cd server
+node scripts/generate-certs.js
+```
+
+### Uruchomienie z HTTPS
+
+```bash
+USE_HTTPS=true npm run dev
+```
+
+Serwer bedzie dostepny na https://localhost:3000
+
+## Preferencje UI
+
+API do zapisywania preferencji uzytkownika w cookies:
+
+- `GET /api/preferences` - pobierz preferencje
+- `POST /api/preferences/zone` - zapisz ostatnia strefe
+- `POST /api/preferences/theme` - zapisz motyw (light/dark)
+- `DELETE /api/preferences` - wyczysc
+
 ## Strony klienta
 
 - `/` - logowanie
