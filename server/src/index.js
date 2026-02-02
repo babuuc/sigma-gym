@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
+const https = require('https');
+const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -16,10 +18,33 @@ const reservationsRoutes = require('./routes/reservations');
 const ticketsRoutes = require('./routes/tickets');
 const readingsRoutes = require('./routes/readings');
 const { router: streamRoutes } = require('./routes/stream');
+const preferencesRoutes = require('./routes/preferences');
 
 const app = express();
-const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
+const USE_HTTPS = process.env.USE_HTTPS === 'true';
+
+// utworz serwer http lub https
+let server;
+if (USE_HTTPS) {
+  const certsDir = path.join(__dirname, '../certs');
+  const keyPath = path.join(certsDir, 'server.key');
+  const certPath = path.join(certsDir, 'server.cert');
+
+  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+    const options = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath)
+    };
+    server = https.createServer(options, app);
+    logger.info('HTTPS mode enabled');
+  } else {
+    logger.warn('certyfikaty nie znalezione, uzywam HTTP');
+    server = http.createServer(app);
+  }
+} else {
+  server = http.createServer(app);
+}
 
 // uruchom migracje i seed
 migrate();
@@ -58,6 +83,7 @@ app.use('/api/reservations', reservationsRoutes);
 app.use('/api/tickets', ticketsRoutes);
 app.use('/api/readings', readingsRoutes);
 app.use('/api/stream', streamRoutes);
+app.use('/api/preferences', preferencesRoutes);
 
 // 404 handler
 app.use((req, res) => {
