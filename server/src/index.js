@@ -8,6 +8,7 @@ const logger = require('./utils/logger');
 const migrate = require('./db/migrate');
 const seed = require('./db/seed');
 const { initSocket } = require('./services/socketService');
+const { initMqtt } = require('./services/mqttService');
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const equipmentRoutes = require('./routes/equipment');
@@ -71,4 +72,7 @@ app.use((err, req, res, next) => {
 
 server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
+  
+  // inicjalizuj mqtt
+  initMqtt();
 });
