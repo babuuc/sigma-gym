@@ -14,6 +14,7 @@ const equipmentRoutes = require('./routes/equipment');
 const reservationsRoutes = require('./routes/reservations');
 const ticketsRoutes = require('./routes/tickets');
 const readingsRoutes = require('./routes/readings');
+const { router: streamRoutes } = require('./routes/stream');
 
 const app = express();
 const server = http.createServer(app);
@@ -55,6 +56,7 @@ app.use('/api/equipment', equipmentRoutes);
 app.use('/api/reservations', reservationsRoutes);
 app.use('/api/tickets', ticketsRoutes);
 app.use('/api/readings', readingsRoutes);
+app.use('/api/stream', streamRoutes);
 
 // 404 handler
 app.use((req, res) => {
