@@ -3,9 +3,15 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('./utils/logger');
+const migrate = require('./db/migrate');
+const seed = require('./db/seed');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// uruchom migracje i seed
+migrate();
+seed();
 
 // middleware
 app.use(cors({
