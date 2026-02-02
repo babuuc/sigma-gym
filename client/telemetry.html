@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sigma Gym - Telemetria</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/dashboard.html">Sigma Gym</a>
+      <div class="navbar-nav">
+        <a class="nav-link" href="/dashboard.html">Dashboard</a>
+        <a class="nav-link" href="/equipment.html">Sprzet</a>
+        <a class="nav-link" href="/reservations.html">Rezerwacje</a>
+        <a class="nav-link" href="/tickets.html">Zgloszenia</a>
+        <a class="nav-link active" href="/telemetry.html">Telemetria</a>
+      </div>
+      <div class="navbar-nav ms-auto">
+        <span class="nav-link" id="userInfo"></span>
+        <a class="nav-link" href="#" id="logoutBtn">Wyloguj</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <h2>Telemetria sprzetu</h2>
+    
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <select class="form-select" id="equipmentSelect">
+          <option value="">Wybierz sprzet...</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <button class="btn btn-primary" id="startBtn" disabled>Start</button>
+        <button class="btn btn-danger" id="stopBtn" disabled>Stop</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">Telemetria na zywo</div>
+          <div class="card-body">
+            <div id="telemetryData" class="small" style="max-height: 300px; overflow-y: auto;">
+              Wybierz sprzet i kliknij Start
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">Activity Feed</div>
+          <div class="card-body">
+            <div id="activityFeed" class="small" style="max-height: 300px; overflow-y: auto;">
+              Ladowanie...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    axios.defaults.withCredentials = true;
+    let telemetryES = null;
+    let activityES = null;
+
+    async function checkAuth() {
+      try {
+        const res = await axios.get('/api/auth/me');
+        document.getElementById('userInfo').textContent = res.data.user.username;
+        startActivityFeed();
+      } catch (err) {
+        window.location.href = '/';
+      }
+    }
+
+    async function loadEquipment() {
+      try {
+        const res = await axios.get('/api/equipment');
+        const select = document.getElementById('equipmentSelect');
+        select.innerHTML = '<option value="">Wybierz sprzet...</option>' + 
+          res.data.map(eq => `<option value="${eq.id}">${eq.name} (${eq.zone})</option>`).join('');
+      } catch (err) {
+        console.error('blad ladowania sprzetu');
+      }
+    }
+
+    function startTelemetry(equipmentId) {
+      if (telemetryES) {
+        telemetryES.close();
+      }
+
+      telemetryES = new EventSource(`/api/stream/equipment/${equipmentId}`);
+      
+      telemetryES.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const div = document.getElementById('telemetryData');
+        const time = new Date().toLocaleTimeString();
+        div.innerHTML = `<div>[${time}] temp: ${data.temperature}C, vib: ${data.vibration}, usage: ${data.usage_count}</div>` + div.innerHTML;
+      };
+
+      telemetryES.onerror = () => {
+        console.log('sse telemetry error');
+      };
+
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = false;
+      document.getElementById('telemetryData').innerHTML = 'Sledzenie...';
+    }
+
+    function stopTelemetry() {
+      if (telemetryES) {
+        telemetryES.close();
+        telemetryES = null;
+      }
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = true;
+    }
+
+    function startActivityFeed() {
+      activityES = new EventSource('/api/stream/activity');
+      
+      activityES.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const div = document.getElementById('activityFeed');
+        const time = new Date().toLocaleTimeString();
+        div.innerHTML = `<div>[${time}] ${data.type}: ${data.message}</div>` + div.innerHTML;
+      };
+
+      activityES.onerror = () => {
+        console.log('sse activity error');
+      };
+
+      document.getElementById('activityFeed').innerHTML = 'Sledzenie aktywnosci...';
+    }
+
+    document.getElementById('equipmentSelect').addEventListener('change', (e) => {
+      document.getElementById('startBtn').disabled = !e.target.value;
+      if (!e.target.value) stopTelemetry();
+    });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      const equipmentId = document.getElementById('equipmentSelect').value;
+      if (equipmentId) startTelemetry(equipmentId);
+    });
+
+    document.getElementById('stopBtn').addEventListener('click', stopTelemetry);
+
+    document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      if (telemetryES) telemetryES.close();
+      if (activityES) activityES.close();
+      await axios.post('/api/auth/logout');
+      window.location.href = '/';
+    });
+
+    checkAuth();
+    loadEquipment();
+  </script>
+</body>
+</html>
