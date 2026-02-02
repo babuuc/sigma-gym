@@ -5,6 +5,15 @@ const readingsDao = require('../dao/readingsDao');
 const { emitEquipmentUpdate, emitAlert } = require('./socketService');
 const { sendTelemetry, sendActivity } = require('../routes/stream');
 
+// lazy load zeby uniknac circular dependency
+let alertsService = null;
+function getAlertsService() {
+  if (!alertsService) {
+    alertsService = require('./alertsService');
+  }
+  return alertsService;
+}
+
 const BROKER_URL = process.env.MQTT_BROKER || 'mqtt://localhost:1883';
 let client = null;
 
@@ -91,6 +100,9 @@ function handleTelemetry(equipmentId, data) {
       ...equipment,
       telemetry: data
     });
+
+    // sprawdz progi alertow
+    getAlertsService().checkTelemetry(equipmentId, data);
   }
 
   console.log(`mqtt telemetria sprzetu ${equipmentId}:`, data);
