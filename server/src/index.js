@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('./utils/logger');
@@ -32,6 +33,9 @@ app.use((req, res, next) => {
   logger.info(`${req.method} ${req.path}`);
   next();
 });
+
+// static files
+app.use(express.static(path.join(__dirname, '../../client')));
 
 // health endpoint
 app.get('/api/health', (req, res) => {

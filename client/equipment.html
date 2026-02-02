@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sigma Gym - Sprzet</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/dashboard.html">Sigma Gym</a>
+      <div class="navbar-nav">
+        <a class="nav-link" href="/dashboard.html">Dashboard</a>
+        <a class="nav-link active" href="/equipment.html">Sprzet</a>
+        <a class="nav-link" href="/reservations.html">Rezerwacje</a>
+        <a class="nav-link" href="/tickets.html">Zgloszenia</a>
+      </div>
+      <div class="navbar-nav ms-auto">
+        <span class="nav-link" id="userInfo"></span>
+        <a class="nav-link" href="#" id="logoutBtn">Wyloguj</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <h2>Sprzet</h2>
+    
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <div class="input-group">
+          <input type="text" class="form-control" id="searchInput" placeholder="Szukaj...">
+          <button class="btn btn-outline-primary" id="searchBtn">Szukaj</button>
+          <button class="btn btn-outline-secondary" id="clearBtn">Wszystko</button>
+        </div>
+      </div>
+      <div class="col-md-6 text-end">
+        <button class="btn btn-success" id="addBtn">Dodaj sprzet</button>
+      </div>
+    </div>
+
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nazwa</th>
+          <th>Typ</th>
+          <th>Strefa</th>
+          <th>Status</th>
+          <th>Zablokowany</th>
+          <th>Akcje</th>
+        </tr>
+      </thead>
+      <tbody id="equipmentTable"></tbody>
+    </table>
+  </div>
+
+  <!-- modal dodawania -->
+  <div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Dodaj sprzet</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addForm">
+            <div class="mb-3">
+              <label class="form-label">Nazwa</label>
+              <input type="text" class="form-control" id="addName" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Typ</label>
+              <input type="text" class="form-control" id="addType" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Strefa</label>
+              <input type="text" class="form-control" id="addZone" required>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+          <button type="button" class="btn btn-primary" id="addSubmit">Dodaj</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    axios.defaults.withCredentials = true;
+    let addModal;
+
+    async function checkAuth() {
+      try {
+        const res = await axios.get('/api/auth/me');
+        document.getElementById('userInfo').textContent = res.data.user.username;
+      } catch (err) {
+        window.location.href = '/';
+      }
+    }
+
+    async function loadEquipment() {
+      try {
+        const res = await axios.get('/api/equipment');
+        renderTable(res.data);
+      } catch (err) {
+        alert('blad ladowania sprzetu');
+      }
+    }
+
+    async function searchEquipment(pattern) {
+      try {
+        const res = await axios.get('/api/equipment/search/' + encodeURIComponent(pattern));
+        renderTable(res.data);
+      } catch (err) {
+        alert('blad wyszukiwania');
+      }
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('equipmentTable');
+      tbody.innerHTML = data.map(eq => `
+        <tr>
+          <td>${eq.id}</td>
+          <td>${eq.name}</td>
+          <td>${eq.type}</td>
+          <td>${eq.zone}</td>
+          <td><span class="badge bg-${eq.status === 'online' ? 'success' : 'danger'}">${eq.status}</span></td>
+          <td>${eq.locked ? 'Tak' : 'Nie'}</td>
+          <td>
+            <button class="btn btn-sm btn-danger" onclick="deleteEquipment(${eq.id})">Usun</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function deleteEquipment(id) {
+      if (!confirm('Na pewno usunac?')) return;
+      try {
+        await axios.delete('/api/equipment/' + id);
+        loadEquipment();
+      } catch (err) {
+        alert(err.response?.data?.error || 'blad usuwania');
+      }
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      const pattern = document.getElementById('searchInput').value;
+      if (pattern) searchEquipment(pattern);
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      loadEquipment();
+    });
+
+    document.getElementById('addBtn').addEventListener('click', () => {
+      addModal.show();
+    });
+
+    document.getElementById('addSubmit').addEventListener('click', async () => {
+      const name = document.getElementById('addName').value;
+      const type = document.getElementById('addType').value;
+      const zone = document.getElementById('addZone').value;
+
+      try {
+        await axios.post('/api/equipment', { name, type, zone });
+        addModal.hide();
+        document.getElementById('addForm').reset();
+        loadEquipment();
+      } catch (err) {
+        alert(err.response?.data?.error || 'blad dodawania');
+      }
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await axios.post('/api/auth/logout');
+      window.location.href = '/';
+    });
+
+    addModal = new bootstrap.Modal(document.getElementById('addModal'));
+    checkAuth();
+    loadEquipment();
+  </script>
+</body>
+</html>
