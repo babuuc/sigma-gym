@@ -7,6 +7,7 @@ const migrate = require('./db/migrate');
 const seed = require('./db/seed');
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
+const equipmentRoutes = require('./routes/equipment');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +38,7 @@ app.get('/api/health', (req, res) => {
 // routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
+app.use('/api/equipment', equipmentRoutes);
 
 // 404 handler
 app.use((req, res) => {
