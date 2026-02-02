@@ -5,6 +5,8 @@ const cookieParser = require('cookie-parser');
 const logger = require('./utils/logger');
 const migrate = require('./db/migrate');
 const seed = require('./db/seed');
+const authRoutes = require('./routes/auth');
+const usersRoutes = require('./routes/users');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -31,6 +33,10 @@ app.use((req, res, next) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', usersRoutes);
 
 // 404 handler
 app.use((req, res) => {
