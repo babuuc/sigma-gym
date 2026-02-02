@@ -5,3 +5,4 @@ certs/
 *.db
 *.sqlite
 .DS_Store
+.github/
