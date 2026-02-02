@@ -54,20 +54,98 @@
         </div>
       </div>
     </div>
+
+    <!-- live updates -->
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">Live - Strefa</h5>
+            <select class="form-select form-select-sm mt-2" id="zoneSelect">
+              <option value="">Wybierz strefe...</option>
+            </select>
+          </div>
+          <div class="card-body">
+            <div id="liveEquipment" class="small">Wybierz strefe aby sledzic</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">Alerty</h5>
+          </div>
+          <div class="card-body">
+            <div id="alertsList" class="small">Brak alertow</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/socket.io/client-dist/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script>
     axios.defaults.withCredentials = true;
+    let socket = null;
+    let currentZone = '';
 
     async function checkAuth() {
       try {
         const res = await axios.get('/api/auth/me');
         document.getElementById('userInfo').textContent = res.data.user.username + ' (' + res.data.user.role + ')';
+        initSocket();
       } catch (err) {
         window.location.href = '/';
       }
     }
+
+    function initSocket() {
+      socket = io({ withCredentials: true });
+
+      socket.on('connect', () => {
+        console.log('ws polaczono');
+      });
+
+      socket.on('equipmentUpdate', (eq) => {
+        const div = document.getElementById('liveEquipment');
+        const time = new Date().toLocaleTimeString();
+        div.innerHTML = `<div class="text-success">[${time}] ${eq.name}: ${eq.status}</div>` + div.innerHTML;
+      });
+
+      socket.on('alert', (alert) => {
+        const div = document.getElementById('alertsList');
+        const time = new Date().toLocaleTimeString();
+        div.innerHTML = `<div class="text-danger">[${time}] ${alert.message}</div>` + div.innerHTML;
+      });
+
+      socket.on('disconnect', () => {
+        console.log('ws rozlaczono');
+      });
+    }
+
+    async function loadZones() {
+      try {
+        const eq = await axios.get('/api/equipment');
+        const zones = [...new Set(eq.data.map(e => e.zone))];
+        const select = document.getElementById('zoneSelect');
+        select.innerHTML = '<option value="">Wybierz strefe...</option>' + 
+          zones.map(z => `<option value="${z}">${z}</option>`).join('');
+      } catch (err) {
+        console.error('blad ladowania stref');
+      }
+    }
+
+    document.getElementById('zoneSelect').addEventListener('change', (e) => {
+      if (currentZone && socket) {
+        socket.emit('leaveZone', currentZone);
+      }
+      currentZone = e.target.value;
+      if (currentZone && socket) {
+        socket.emit('joinZone', currentZone);
+        document.getElementById('liveEquipment').innerHTML = 'Sledzenie strefy: ' + currentZone;
+      }
+    });
 
     async function loadStats() {
       try {
@@ -95,12 +173,14 @@
 
     document.getElementById('logoutBtn').addEventListener('click', async (e) => {
       e.preventDefault();
+      if (socket) socket.disconnect();
       await axios.post('/api/auth/logout');
       window.location.href = '/';
     });
 
     checkAuth();
     loadStats();
+    loadZones();
   </script>
 </body>
 </html>

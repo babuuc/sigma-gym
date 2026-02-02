@@ -1,11 +1,13 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
 const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('./utils/logger');
 const migrate = require('./db/migrate');
 const seed = require('./db/seed');
+const { initSocket } = require('./services/socketService');
 const authRoutes = require('./routes/auth');
 const usersRoutes = require('./routes/users');
 const equipmentRoutes = require('./routes/equipment');
@@ -14,11 +16,15 @@ const ticketsRoutes = require('./routes/tickets');
 const readingsRoutes = require('./routes/readings');
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 3000;
 
 // uruchom migracje i seed
 migrate();
 seed();
+
+// inicjalizuj socket.io
+initSocket(server);
 
 // middleware
 app.use(cors({
@@ -61,6 +67,6 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
 });
