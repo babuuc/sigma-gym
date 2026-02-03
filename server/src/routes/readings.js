@@ -7,25 +7,25 @@ const authMiddleware = require('../middleware/auth');
 const router = express.Router();
 
 // pobierz odczyty dla sprzetu - kazdy zalogowany
-router.get('/equipment/:id', authMiddleware, (req, res) => {
-  const eq = equipmentDao.getById(req.params.id);
+router.get('/:equipmentId', authMiddleware, (req, res) => {
+  const eq = equipmentDao.getById(req.params.equipmentId);
   if (!eq) {
     return res.status(404).json({ error: 'sprzet nie istnieje' });
   }
 
   const limit = parseInt(req.query.limit) || 100;
-  const readings = readingsDao.getByEquipment(req.params.id, limit);
+  const readings = readingsDao.getByEquipment(req.params.equipmentId, limit);
   res.json(readings);
 });
 
 // pobierz ostatni odczyt dla sprzetu - kazdy zalogowany
-router.get('/equipment/:id/latest', authMiddleware, (req, res) => {
-  const eq = equipmentDao.getById(req.params.id);
+router.get('/:equipmentId/latest', authMiddleware, (req, res) => {
+  const eq = equipmentDao.getById(req.params.equipmentId);
   if (!eq) {
     return res.status(404).json({ error: 'sprzet nie istnieje' });
   }
 
-  const reading = readingsDao.getLatest(req.params.id);
+  const reading = readingsDao.getLatest(req.params.equipmentId);
   if (!reading) {
     return res.status(404).json({ error: 'brak odczytow' });
   }

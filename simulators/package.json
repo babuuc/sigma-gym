@@ -1,0 +1,9 @@
+{
+  "name": "sigma-gym-simulators",
+  "version": "1.0.0",
+  "description": "Simulators for Sigma Gym equipment",
+  "private": true,
+  "dependencies": {
+    "mqtt": "^5.0.0"
+  }
+}
