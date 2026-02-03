@@ -1,0 +1,7 @@
+1770142046: mosquitto version 2.0.22 starting
+1770142046: Config loaded from /mosquitto/config/mosquitto.conf.
+1770142046: Opening ipv4 listen socket on port 1883.
+1770142046: Opening ipv6 listen socket on port 1883.
+1770142046: mosquitto version 2.0.22 running
+1770142058: New connection from 172.20.0.1:51526 on port 1883.
+1770142058: New client connected from 172.20.0.1:51526 as sigma-backend-1770142058460 (p2, c1, k60).
