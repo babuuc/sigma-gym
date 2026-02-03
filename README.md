@@ -34,15 +34,21 @@ npm run dev
 ### 3. Symulator sprzetu (opcjonalnie)
 
 ```bash
+cd simulators
+npm install
+cd ..
 node simulators/equipment-sim.js 1 5000
 ```
 
 Argumenty: equipment_id, interval_ms
 
-## Domyslny admin
+## Domyslne konta
 
-login: `admin`  
-haslo: `admin`
+| login  | haslo  | rola   |
+|--------|--------|--------|
+| admin  | admin  | admin  |
+| staff  | staff  | staff  |
+| member | member | member |
 
 ## REST API
 
